@@ -3,9 +3,11 @@
 // /output/entry.txt. The program runs twice with no network, and both runs
 // write the same bytes. Outside the grader's container, MAKEFUN_OUTPUT_DIR
 // stands in for /output:
-//   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+//   MAKEFUN_OUTPUT_DIR=out node main.ts
+// The output directory is created automatically, and the written file is
+// read back and verified byte-for-byte before the program exits.
 
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
@@ -16,4 +18,10 @@ const TEXT = [
   'The machines do their work without being watched, and the night asks nothing of them. The sheet keeps turning. The rain keeps not quite stopping. And the warm air smells faintly of soap and clean cotton, the way Sunday mornings used to smell, when the whole day lay folded up neatly ahead of you.',
 ].join('\n\n');
 
-writeFileSync(join(OUTPUT_DIR, 'entry.txt'), TEXT);
+const outPath = join(OUTPUT_DIR, 'entry.txt');
+mkdirSync(OUTPUT_DIR, { recursive: true });
+writeFileSync(outPath, TEXT);
+const written = readFileSync(outPath);
+if (!written.equals(Buffer.from(TEXT, 'utf8'))) {
+  throw new Error('verification failed: entry.txt bytes differ from expected TEXT');
+}
